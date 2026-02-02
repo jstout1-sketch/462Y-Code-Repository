@@ -39,7 +39,7 @@ controller = Controller()
 
 ratio = GearSetting.RATIO_6_1
 speed = 24
-auton_speed = 0.5
+auton_speed = 0.0625
 auton__turn_speed = 0.5
 intake_speed = 1000
 intake_lock = False
@@ -82,16 +82,7 @@ while brain_inertial.is_calibrating():
     brain.screen.print("Inertial Sensor Calibrating")
     wait(50, MSEC)
 
-def drive_to(speed, time):
-    left_motor_back.spin(FORWARD, speed, VOLT)
-    left_motor_top.spin(FORWARD, speed, VOLT)
-    left_motor_front.spin(FORWARD, speed, VOLT)
-    right_motor_back.spin(FORWARD, speed, VOLT)
-    right_motor_top.spin(FORWARD, speed, VOLT)
-    right_motor_front.spin(FORWARD, speed, VOLT)
-    wait(time, SECONDS)
-    drivetrain.stop(BRAKE)
-    
+brain_inertial.reset_heading()
 
 def toggle_descore():
     print("descore toggle attempt")
@@ -104,7 +95,7 @@ def toggle_descore():
         descore.close()
         print("descore toggled off")
 
-def toggle_matchloader_auton():
+def toggle_matchloader_auton(): 
     global matchload_state
     matchload_state = not matchload_state
     if matchload_state:
@@ -130,7 +121,7 @@ def drive_distance(distance):
     counter = 0
     time_counter = 0
     distanceInDeg = (distance / (3.25 * math.pi)) * (5.0/3.0) * 360 #dist (in) *    1 rev /  (diam * pi) in * (5 / 3) * 360 deg / 1rv
-    while counter < 250 and time_counter < 2000:
+    while counter < 150 and time_counter < 2000:
         #distance_traveled = (left_drivetrain_motors.position() * 3.0/5.0) * 10.2101761242/360.0
         lmp = left_motor_front.position()
         rmp = right_motor_front.position()
@@ -142,7 +133,7 @@ def drive_distance(distance):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(left_drive_PID.error) <= 5 and abs(right_drive_PID.error) <= 5:
+        if abs(left_drive_PID.error) <= 10 and abs(right_drive_PID.error) <= 10:
             counter += 10
         else:
             counter = 0
@@ -156,7 +147,7 @@ def turn_under_80_degrees(measure):
     under_80_turn_PID.previous_error = under_80_turn_PID.error
     counter = 0
     time_counter = 0
-    while counter < 250 and time_counter < 2000:
+    while counter < 150 and time_counter < 2000:
         output = under_80_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 5 if output > 5 else output
         l_output_clamped = -5 if l_output_clamped < -5 else l_output_clamped
@@ -181,7 +172,7 @@ def turn_over_80_degrees(measure):
     middle_turn_PID.previous_error = middle_turn_PID.error
     counter = 0
     time_counter = 0
-    while counter < 250 and time_counter < 2000:
+    while counter < 150 and time_counter < 2000:
         output = middle_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 8 if output > 8 else output
         l_output_clamped = -8 if l_output_clamped < -8 else l_output_clamped
@@ -193,7 +184,7 @@ def turn_over_80_degrees(measure):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(middle_turn_PID.error) <= 1.25:
+        if abs(middle_turn_PID.error) <= 2:
             counter += 10
         else:
             counter = 0
@@ -206,7 +197,7 @@ def turn_over_135_degrees(measure):
     over_100_turn_PID.previous_error = under_80_turn_PID.error
     counter = 0
     time_counter = 0
-    while counter < 250 and time_counter < 2000:
+    while counter < 150 and time_counter < 2000:
         output = over_100_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 8 if output > 8 else output
         l_output_clamped = -8 if l_output_clamped < -8 else l_output_clamped
@@ -218,7 +209,7 @@ def turn_over_135_degrees(measure):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(over_100_turn_PID.error) <= 1:
+        if abs(over_100_turn_PID.error) <= 2:
             counter += 10
         else:
             counter = 0
@@ -226,47 +217,88 @@ def turn_over_135_degrees(measure):
         wait(10, MSEC)
     drivetrain.stop()
 
+def toggle_intake_lock():
+    global intake_lock
+    intake_lock = not intake_lock
+    if intake_lock:
+        intake_motor.spin(FORWARD, intake_speed)
+
+def unjam():
+    for i in range(10):
+        score_motor.spin(REVERSE, intake_speed)
+        intake_motor.spin(FORWARD, intake_speed)
+        wait(0.5, SECONDS)
+        intake_motor.spin(REVERSE, intake_speed)
+        wait(0.5, SECONDS)
 
 def autonomous():
     brain.screen.clear_screen()
     brain.screen.print("autonomous code")
     intake_motor.spin(FORWARD, intake_speed)
-    drive_distance(30)
-    turn_over_80_degrees(-90)
-    toggle_matchloader()
-    wait(0.5, SECONDS)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_distance(2)
-    drive_distance(-2)
-    drive_distance(2)
+    # turn_over_80_degrees(90)
+    turn_under_80_degrees(22)
+    drive_distance(20)
+    drive_distance(8)
+    turn_over_80_degrees(135)
+    drive_distance(35.5)
+    # intake_motor.spin(REVERSE, 120)
+    # score_motor.spin(REVERSE, 120)
+    # wait(2, SECONDS)
+    # intake_motor.spin(FORWARD, intake_speed)
+    # score_motor.stop()
+    # drive_distance(-45)
+    turn_under_80_degrees(180)
+    # toggle_matchloader_auton()
+    # wait(0.5, SECONDS)
+    # drive_distance(12)
+    # wait(0.5, SECONDS)
+    drive_distance(-24)
+    # intake_motor.spin(FORWARD, intake_speed)
+    score_motor.spin(FORWARD, 120)
 
 def user_control():
     brain.screen.clear_screen()
     brain.screen.print("driver control")
-    # place driver control in this while loop
-    intake_motor.spin(FORWARD, intake_speed)
-    drive_distance(30)
-    turn_over_80_degrees(-90)
-    toggle_matchloader()
-    wait(0.5, SECONDS)
-    drive_to(100, 0.4)
-    drive_distance(-2)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_to(100, 0.25)
-    drive_distance(-10)
-    turn_over_80_degrees(0)
-    drive_distance(12)
-    turn_over_80_degrees(90)
-    drive_distance(48)
     while True:
         wait(20, MSEC)
+        left_motor_back.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        left_motor_top.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        left_motor_front.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        right_motor_back.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
+        right_motor_top.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
+        right_motor_front.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
+        
+        # if controller.buttonDown.pressing():
+        #     intake_lock = True
+        #     intake_motor.spin(FORWARD, intake_speed)
+        # elif controller.buttonUp.pressing():
+        #     intake_lock = False
 
+        if controller.buttonR2.pressing():
+            intake_motor.spin(FORWARD, intake_speed)
+        elif controller.buttonL2.pressing():
+            intake_motor.spin(REVERSE, intake_speed)
+        elif not intake_lock:
+            intake_motor.stop()
+
+        if controller.buttonR1.pressing():
+            score_motor.spin(FORWARD, intake_speed)
+        elif controller.buttonL1.pressing():
+            score_motor.spin(REVERSE, intake_speed)
+        else:
+            score_motor.stop()
+
+        # if abs(controller.axis1.position()) == 100:
+        #     controller.rumble("-")
+
+        # if abs(controller.axis3.position()) == 100:
+        #     controller.rumble(".")        
+        
+        
+controller.buttonY.pressed(toggle_descore)
+controller.buttonRight.pressed(toggle_matchloader)
+controller.buttonDown.pressed(toggle_intake_lock)
+controller.buttonUp.pressed(unjam)
 # create competition instance
 comp = Competition(user_control, autonomous)
 

@@ -231,17 +231,8 @@ def autonomous():
     brain.screen.clear_screen()
     brain.screen.print("autonomous code")
     intake_motor.spin(FORWARD, intake_speed)
+    score_motor.spin(FORWARD,intake_speed)
     drive_distance(30)
-    turn_over_80_degrees(-90)
-    toggle_matchloader()
-    wait(0.5, SECONDS)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_to(100, 0.25)
-    drive_distance(-2)
-    drive_distance(2)
-    drive_distance(-2)
-    drive_distance(2)
 
 def user_control():
     brain.screen.clear_screen()

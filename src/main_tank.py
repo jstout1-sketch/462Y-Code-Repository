@@ -46,9 +46,9 @@ intake_lock = False
 descore_state = False
 matchload_state = False
 target_heading = 0
-left_drive_PID = PID("LEFT", 0.025, 0.0016, 0.125, 20)
+left_drive_PID = PID("LEFT", 0.03, 0.0016, 0.125, 20)
 right_drive_PID = PID("RIGHT", 0.025, 0.0016, 0.125, 20)
-heading_PID = PID("HEADING", 0.2, 0, 0.5, 25)
+heading_PID = PID("HEADING", 0, 0, 0, 25)
 under_80_turn_PID = PID("TURN", 0.156, 0.0005, 0, 2)
 over_100_turn_PID = PID("TURN", 0.11, 0, 0.05, 2)
 middle_turn_PID = PID("TURN", 0.117, 0, 0.06, 2)
@@ -119,8 +119,9 @@ def drive_distance(distance):
     left_drive_PID.previous_error = left_drive_PID.error
     right_drive_PID.previous_error = right_drive_PID.error
     counter = 0
+    time_counter = 0
     distanceInDeg = (distance / (3.25 * math.pi)) * (5.0/3.0) * 360 #dist (in) *    1 rev /  (diam * pi) in * (5 / 3) * 360 deg / 1rv
-    while counter < 250:
+    while counter < 150 and time_counter < 2000:
         #distance_traveled = (left_drivetrain_motors.position() * 3.0/5.0) * 10.2101761242/360.0
         lmp = left_motor_front.position()
         rmp = right_motor_front.position()
@@ -132,10 +133,11 @@ def drive_distance(distance):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(left_drive_PID.error) <= 5 and abs(right_drive_PID.error) <= 5:
+        if abs(left_drive_PID.error) <= 10 and abs(right_drive_PID.error) <= 10:
             counter += 10
         else:
             counter = 0
+        time_counter += 10
         wait(10, MSEC)
         #print(drive_PID.error)
     drivetrain.stop(BRAKE)
@@ -144,7 +146,8 @@ def turn_under_80_degrees(measure):
     under_80_turn_PID.error = measure
     under_80_turn_PID.previous_error = under_80_turn_PID.error
     counter = 0
-    while counter < 250:
+    time_counter = 0
+    while counter < 150 and time_counter < 2000:
         output = under_80_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 5 if output > 5 else output
         l_output_clamped = -5 if l_output_clamped < -5 else l_output_clamped
@@ -156,10 +159,11 @@ def turn_under_80_degrees(measure):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(under_80_turn_PID.error) <= 1:
-            counter += 1
+        if abs(under_80_turn_PID.error) <= 2:
+            counter += 10
         else:
             counter = 0
+        time_counter += 10
         wait(10, MSEC)
     drivetrain.stop()
 
@@ -167,7 +171,8 @@ def turn_over_80_degrees(measure):
     middle_turn_PID.error = measure
     middle_turn_PID.previous_error = middle_turn_PID.error
     counter = 0
-    while counter < 250:
+    time_counter = 0
+    while counter < 150 and time_counter < 2000:
         output = middle_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 8 if output > 8 else output
         l_output_clamped = -8 if l_output_clamped < -8 else l_output_clamped
@@ -179,10 +184,11 @@ def turn_over_80_degrees(measure):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(middle_turn_PID.error) <= 1.25:
-            counter += 1
+        if abs(middle_turn_PID.error) <= 2:
+            counter += 10
         else:
             counter = 0
+        time_counter += 10
         wait(10, MSEC)
     drivetrain.stop()
 
@@ -190,7 +196,8 @@ def turn_over_135_degrees(measure):
     over_100_turn_PID.error = measure
     over_100_turn_PID.previous_error = under_80_turn_PID.error
     counter = 0
-    while counter < 250:
+    time_counter = 0
+    while counter < 150 and time_counter < 2000:
         output = over_100_turn_PID.loop_instance(brain_inertial.rotation(), measure)
         l_output_clamped = 8 if output > 8 else output
         l_output_clamped = -8 if l_output_clamped < -8 else l_output_clamped
@@ -202,10 +209,11 @@ def turn_over_135_degrees(measure):
         right_motor_back.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_top.spin(FORWARD, right_drive_speed, VOLT)
         right_motor_front.spin(FORWARD, right_drive_speed, VOLT)
-        if abs(over_100_turn_PID.error) <= 1:
-            counter += 1
+        if abs(over_100_turn_PID.error) <= 2:
+            counter += 10
         else:
             counter = 0
+        time_counter += 10
         wait(10, MSEC)
     drivetrain.stop()
 
@@ -227,17 +235,23 @@ def autonomous():
     brain.screen.clear_screen()
     brain.screen.print("autonomous code")
     intake_motor.spin(FORWARD, intake_speed)
-    drive_distance(40)
-    turn_over_80_degrees(-124)
+    # turn_over_80_degrees(90)
+    turn_under_80_degrees(-25)
+    drive_distance(20)
+    drive_distance(8)
+    turn_over_80_degrees(-135)
     drive_distance(-13)
     score_motor.spin(FORWARD, 120)
     wait(2, SECONDS)
     score_motor.stop()
-    drive_distance(50)
-    turn_under_80_degrees(-45)
+    drive_distance(47)
+    turn_under_80_degrees(-180)
     toggle_matchloader_auton()
+    wait(0.25, SECONDS)
+    drive_distance(12)
     wait(0.5, SECONDS)
-    drive_distance(6)
+    drive_distance(-25)
+    score_motor.spin(FORWARD, 120)
 
 def user_control():
     brain.screen.clear_screen()

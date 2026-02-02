@@ -162,8 +162,12 @@ def user_control():
     controller.buttonUp.pressed(unjam)
     while True:
         wait(20, MSEC)
-        right_drivetrain_motors.spin(FORWARD, controller.axis2.position() * 8, RPM)
-        left_drivetrain_motors.spin(FORWARD, controller.axis3.position() * 8, RPM)
+        left_motor_back.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        left_motor_top.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        left_motor_front.spin(FORWARD, controller.axis3.position() * 0.12, VOLT)
+        right_motor_back.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
+        right_motor_top.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
+        right_motor_front.spin(FORWARD, controller.axis2.position() * 0.12, VOLT)
 
         # if controller.buttonDown.pressing():
         #     intake_lock = True
