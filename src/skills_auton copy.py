@@ -255,8 +255,7 @@ def user_control():
     drive_distance(12)
     turn_over_80_degrees(90)
     drive_distance(48)
-    while True:
-        wait(20, MSEC)
+
 
 # create competition instance
 comp = Competition(user_control, autonomous)
